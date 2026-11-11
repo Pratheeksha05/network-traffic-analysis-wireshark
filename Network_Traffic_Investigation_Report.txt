@@ -1,0 +1,491 @@
+# NETWORK TRAFFIC ANALYSIS AND SUSPICIOUS ACTIVITY INVESTIGATION USING WIRESHARK
+
+## 1. Project Overview
+
+This project focuses on capturing, examining, and analyzing network traffic using Wireshark on a Windows 11 system.
+
+The objective is to understand network communication at the packet level, investigate different network protocols, and identify potentially unusual traffic patterns through practical packet analysis.
+
+The investigation covers TCP, UDP, DNS, HTTP, HTTPS/TLS, ARP, DHCP, ICMPv6, and multicast DNS (mDNS).
+
+The project also examines TCP retransmissions, duplicate acknowledgments, connection resets, and other network behaviors.
+
+## 2. Project Objectives
+
+- Understand packet structure and network communication.
+- Capture live network traffic using Wireshark.
+- Analyze TCP connections and the TCP three-way handshake.
+- Examine DNS queries and responses.
+- Inspect HTTP requests and responses.
+- Understand encrypted HTTPS/TLS communication.
+- Analyze UDP packets and their headers.
+- Investigate ARP requests and replies.
+- Examine DHCP message types.
+- Understand ICMPv6 Neighbor Discovery.
+- Investigate multicast DNS traffic.
+- Identify TCP retransmissions, duplicate acknowledgments, and connection resets.
+- Apply Wireshark display filters to investigate specific traffic patterns.
+- Document observations and findings using packet-level evidence.
+
+## 3. Tools and Technologies Used
+
+| Tool / Technology | Purpose |
+|---|---|
+| Windows 11 | Operating system |
+| Wireshark 4.6.9 | Network packet capture and analysis |
+| Wi-Fi Network Interface | Capturing network traffic |
+| TCP/IP | Network communication protocols |
+| DNS | Domain name resolution |
+| HTTP/HTTPS | Web communication |
+| ARP | IPv4-to-MAC address resolution |
+| DHCP | IP configuration |
+| ICMPv6 | IPv6 Neighbor Discovery |
+| mDNS | Local network service discovery |
+
+## 4. Methodology
+
+The investigation was performed using the following methodology:
+
+1. Installed and opened Wireshark.
+2. Selected the active Wi-Fi network interface.
+3. Started packet capture and generated ordinary network activity.
+4. Observed captured packets using the packet list, packet details, and packet bytes panes.
+5. Applied display filters to isolate specific protocols and packet types.
+6. Examined packet headers, source and destination addresses, ports, protocol fields, and packet information.
+7. Investigated selected network behaviors and possible anomalies.
+8. Saved the packet capture locally for further analysis.
+9. Recorded observations and documented the investigation results.
+
+## 5. TCP Traffic Analysis
+
+### 5.1 TCP Three-Way Handshake
+
+The TCP three-way handshake was investigated to understand how a TCP connection is established.
+
+The following display filters were used:
+
+Initial SYN:
+`tcp.flags.syn == 1 && tcp.flags.ack == 0`
+
+SYN-ACK:
+`tcp.flags.syn == 1 && tcp.flags.ack == 1`
+
+ACK:
+`tcp.flags.syn == 0 && tcp.flags.ack == 1`
+
+The investigation identified TCP connection-establishment packets and examined their source and destination ports, sequence numbers, and acknowledgment numbers.
+
+A matching connection was observed with an initial SYN, a reverse-direction SYN-ACK, and a subsequent ACK. This was consistent with a completed TCP three-way handshake.
+
+### 5.2 TCP Retransmission Analysis
+
+The following filters were used:
+
+`tcp.analysis.retransmission`
+
+`tcp.analysis.fast_retransmission`
+
+`tcp.analysis.out_of_order`
+
+`tcp.analysis.duplicate_ack`
+
+`tcp.analysis.lost_segment`
+
+The investigation identified examples of retransmission, fast retransmission, duplicate acknowledgment, out-of-order delivery, and a packet marked as having a previous segment not captured.
+
+These observations helped demonstrate how Wireshark identifies potential TCP delivery and sequencing issues.
+
+A packet marked as a lost segment does not necessarily prove actual network packet loss. It may also occur when the capture begins after earlier packets have already been transmitted.
+
+### 5.3 TCP Reset and Connection Closure
+
+The following filters were used:
+
+`tcp.flags.reset == 1`
+
+`tcp.flags.fin == 1`
+
+TCP RST packets and FIN packets were observed.
+
+A TCP RST packet was examined with source and destination port information. FIN packets were also examined to understand orderly TCP connection termination.
+
+The investigation demonstrated the difference between a TCP reset and a FIN-based connection closure.
+
+## 6. UDP Traffic Analysis
+
+The following display filter was used:
+
+`udp`
+
+UDP packet headers and payloads were examined.
+
+One observed UDP packet contained:
+
+- Source IP: A private local-network address.
+- Destination IP: The local network broadcast address.
+- Source port: 57913.
+- Destination port: 9995.
+- UDP length: 329 bytes.
+- UDP payload length: 321 bytes.
+
+The packet contained a data payload.
+
+The checksum was displayed as unverified by Wireshark. This does not establish that the packet was corrupted or malicious.
+
+The application protocol could not be conclusively identified from this packet alone.
+
+## 7. DNS Analysis
+
+The following display filters were used:
+
+All DNS traffic:
+`dns`
+
+DNS queries:
+`dns.flags.response == 0`
+
+DNS responses:
+`dns.flags.response == 1`
+
+The investigation examined DNS query names, record types, response information, and returned addresses.
+
+Examples of observed DNS record types included:
+
+- A — IPv4 address record.
+- AAAA — IPv6 address record.
+- HTTPS — HTTPS service-related DNS record.
+
+Several domain names associated with ordinary Microsoft and Azure-related services were observed.
+
+DNS queries and responses were examined to understand how domain names are resolved into network addresses.
+
+The presence of a particular domain name alone does not establish which application generated the request or whether the destination is safe.
+
+## 8. HTTP Analysis
+
+The following filters were used:
+
+HTTP traffic:
+`http`
+
+HTTP requests:
+`http.request`
+
+HTTP responses:
+`http.response`
+
+POST requests:
+`http.request.method == "POST"`
+
+DELETE requests:
+`http.request.method == "DELETE"`
+
+PUT requests:
+`http.request.method == "PUT"`
+
+HTTP error responses:
+`http.response.code >= 400`
+
+An HTTP GET request was identified and examined.
+
+The request contained a URI path:
+
+`/drivers/installer/json/NewComponents.json`
+
+The corresponding response was HTTP 301 Moved Permanently.
+
+This demonstrated how Wireshark can identify HTTP methods, request paths, response status codes, and redirection behavior.
+
+No matching POST, DELETE, PUT, or HTTP response status codes of 400 or higher were identified by the respective filters in the captured and decoded HTTP traffic.
+
+These observations apply only to the captured HTTP traffic and do not establish that such activity was absent from encrypted HTTPS connections.
+
+## 9. HTTPS and TLS Analysis
+
+TLS traffic was examined using the following filters:
+
+All TLS traffic:
+`tls`
+
+TLS Client Hello:
+`tls.handshake.type == 1`
+
+TLS Server Hello:
+`tls.handshake.type == 2`
+
+TCP-based Client Hello:
+`tls.handshake.type == 1 && tcp`
+
+TCP-based Server Hello:
+`tls.handshake.type == 2 && tcp`
+
+TLS Application Data:
+`tls.app_data`
+
+A TCP-based TLS connection with SNI hostname `edge.microsoft.com` was investigated.
+
+The following packets were examined:
+
+- Packet 17: Client Hello from the client to the server.
+- Packet 31: Server Hello, Certificate, Certificate Status, Server Key Exchange, and Server Hello Done.
+- Packet 33: Client Key Exchange, Change Cipher Spec, and Encrypted Handshake Message.
+- Packet 54: New Session Ticket, Change Cipher Spec, and Encrypted Handshake Message.
+- Packet 55: Server-to-client Application Data.
+- Packet 57: Client-to-server Application Data.
+
+The negotiated cipher suite observed in the Server Hello was:
+
+`TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`
+
+The server certificate subject identified `edge.microsoft.com` and Microsoft Corporation.
+
+The certificate validity dates observed in the capture were within the validity period at the time of capture.
+
+The connection progressed through the TLS handshake messages and exchanged encrypted application data in both directions.
+
+A later TCP reset was identified in packet 4409.
+
+Additional filters:
+
+TLS Alert:
+`tcp.stream eq 2 && tls.alert_message`
+
+TCP Reset:
+`tcp.stream eq 2 && tcp.flags.reset == 1`
+
+TCP FIN:
+`tcp.stream eq 2 && tcp.flags.fin == 1`
+
+One TCP RST packet was found in this stream. No matching TLS Alert packets or TCP FIN packets were found using these filters.
+
+The later reset does not establish its cause or prove malicious activity. The encrypted application payload could not be interpreted without appropriate TLS decryption keys.
+
+## 10. ARP Analysis
+
+The following filters were used:
+
+All ARP traffic:
+`arp`
+
+ARP requests:
+`arp.opcode == 1`
+
+ARP replies:
+`arp.opcode == 2`
+
+Gratuitous ARP:
+`arp.isgratuitous`
+
+Duplicate address detection:
+`arp.duplicate-address-detected`
+
+The investigation examined an ARP request and its corresponding ARP reply.
+
+The request asked for the MAC address associated with a local IPv4 address.
+
+The corresponding reply provided the requested IP-to-MAC address mapping.
+
+Repeated ARP requests and replies were observed. The replies examined advertised a consistent IP-to-MAC mapping.
+
+No packets matched the gratuitous ARP or duplicate-address-detected filters in the captured traffic.
+
+These results do not prove that the network was completely free of ARP spoofing or other attacks.
+
+## 11. DHCP Analysis
+
+The following filters were used:
+
+All DHCP traffic:
+`dhcp`
+
+DHCP Discover:
+`dhcp.option.dhcp == 1`
+
+DHCP Offer:
+`dhcp.option.dhcp == 2`
+
+DHCP Request:
+`dhcp.option.dhcp == 3`
+
+DHCP Decline:
+`dhcp.option.dhcp == 4`
+
+DHCP ACK:
+`dhcp.option.dhcp == 5`
+
+DHCP NAK:
+`dhcp.option.dhcp == 6`
+
+DHCP Release:
+`dhcp.option.dhcp == 7`
+
+DHCP Inform:
+`dhcp.option.dhcp == 8`
+
+The investigation identified DHCP Inform and DHCP Request messages.
+
+A DHCP Request packet was examined for its transaction ID, requested IP address, client hardware address, and parameter request list.
+
+The capture did not show matching DHCP Discover, Offer, or ACK packets using the filters above.
+
+Therefore, a complete DHCP address-assignment exchange could not be established from the observed packets.
+
+The absence of these messages in this capture does not prove that DHCP was malfunctioning.
+
+## 12. ICMPv6 Neighbor Discovery Analysis
+
+The following filters were used:
+
+ICMPv6:
+`icmpv6`
+
+Neighbor Solicitation:
+`icmpv6.type == 135`
+
+Neighbor Advertisement:
+`icmpv6.type == 136`
+
+A Neighbor Solicitation packet with ICMPv6 Type 135 was examined.
+
+The corresponding Neighbor Advertisement with Type 136 was also investigated.
+
+The packets demonstrated how IPv6 devices discover neighboring devices and their link-layer addresses on the local network.
+
+The Neighbor Advertisement contained a Target Link-Layer Address option.
+
+The observed Hop Limit was 255, which is significant for IPv6 Neighbor Discovery because these messages are intended to remain on the local link.
+
+## 13. Multicast DNS (mDNS) Analysis
+
+The following filters were used:
+
+All mDNS traffic:
+`mdns`
+
+mDNS responses:
+`mdns && dns.flags.response == 1`
+
+mDNS queries:
+`mdns && dns.flags.response == 0`
+
+WPAD hostname queries:
+`mdns && dns.qry.name == "wpad.local"`
+
+Long DNS query names:
+`dns.qry.name.len > 50`
+
+The investigation identified local multicast DNS traffic from multiple local-network devices.
+
+A service-discovery response advertised an Android device hostname and a Nearby Presence service.
+
+Queries for `wpad.local` were also observed.
+
+The presence of WPAD queries alone does not prove that a proxy was configured or that proxy interception occurred.
+
+A long mDNS service-discovery name was examined. It was associated with local Nearby Presence service discovery rather than providing evidence of DNS tunneling.
+
+No malicious activity was confirmed from these observations.
+
+## 14. Suspicious Traffic Investigation
+
+The investigation used protocol-specific filters and packet-level inspection to examine potentially unusual traffic patterns.
+
+The following areas were reviewed:
+
+- Repeated ARP requests and replies.
+- Gratuitous ARP and duplicate-address detection.
+- DHCP message patterns.
+- DNS query names and response sizes.
+- mDNS service-discovery activity.
+- TCP retransmissions and duplicate acknowledgments.
+- TCP resets and connection termination.
+- HTTP requests and response codes.
+- TLS handshake progression and encrypted application traffic.
+
+The analysis identified some unusual or noteworthy packet behaviors, including retransmissions, repeated local network queries, and a later TCP reset.
+
+However, no confirmed malicious activity was established from the available packet evidence.
+
+A packet flagged by Wireshark as unusual does not automatically indicate an attack. Additional context, repeated observations, endpoint logs, and network-level investigation may be required.
+
+## 15. Important Wireshark Display Filters Used
+
+| Purpose | Display Filter |
+|---|---|
+| TCP traffic | `tcp` |
+| UDP traffic | `udp` |
+| DNS traffic | `dns` |
+| HTTP traffic | `http` |
+| TLS traffic | `tls` |
+| ARP traffic | `arp` |
+| DHCP traffic | `dhcp` |
+| ICMPv6 traffic | `icmpv6` |
+| mDNS traffic | `mdns` |
+| TCP initial SYN | `tcp.flags.syn == 1 && tcp.flags.ack == 0` |
+| TCP SYN-ACK | `tcp.flags.syn == 1 && tcp.flags.ack == 1` |
+| TCP retransmissions | `tcp.analysis.retransmission` |
+| TCP duplicate ACK | `tcp.analysis.duplicate_ack` |
+| TCP reset | `tcp.flags.reset == 1` |
+| TCP FIN | `tcp.flags.fin == 1` |
+| DNS queries | `dns.flags.response == 0` |
+| DNS responses | `dns.flags.response == 1` |
+| HTTP requests | `http.request` |
+| TLS Client Hello | `tls.handshake.type == 1` |
+| TLS Server Hello | `tls.handshake.type == 2` |
+| ARP requests | `arp.opcode == 1` |
+| ARP replies | `arp.opcode == 2` |
+| ICMPv6 Neighbor Solicitation | `icmpv6.type == 135` |
+| ICMPv6 Neighbor Advertisement | `icmpv6.type == 136` |
+
+## 16. Key Learning Outcomes
+
+Through this project, the following practical skills were developed:
+
+- Capturing and analyzing live network traffic using Wireshark.
+- Understanding Ethernet, IP, TCP, and UDP packet headers.
+- Identifying source and destination IP addresses and port numbers.
+- Understanding the TCP three-way handshake.
+- Recognizing TCP retransmissions, duplicate acknowledgments, and resets.
+- Analyzing DNS queries and responses.
+- Understanding HTTP methods and response status codes.
+- Examining TLS handshakes and encrypted application data.
+- Understanding ARP address resolution.
+- Examining DHCP message types and client configuration requests.
+- Understanding IPv6 Neighbor Discovery.
+- Investigating mDNS service discovery.
+- Applying Wireshark display filters to isolate network behavior.
+- Recording packet-level observations and writing evidence-based conclusions.
+
+## 17. Limitations
+
+- The investigation used a capture from a single Windows 11 Wi-Fi environment.
+- The analysis represents the traffic visible during the capture period and does not represent every device or activity on the network.
+- HTTPS/TLS application content was encrypted and could not be inspected without decryption keys.
+- Some application protocols could not be conclusively identified from port numbers alone.
+- Wireshark analysis indicators such as retransmission and lost-segment labels require context and are not definitive proof of network faults.
+- The absence of a particular packet type in the capture does not prove that the corresponding activity never occurred.
+- No confirmed cyberattack was established during this investigation.
+- This project was performed for educational purposes and did not involve unauthorized network access or offensive testing.
+
+## 18. Conclusion
+
+This project provided practical experience in network traffic capture, packet inspection, protocol analysis, and investigation using Wireshark.
+
+The investigation covered multiple networking protocols, including TCP, UDP, DNS, HTTP, HTTPS/TLS, ARP, DHCP, ICMPv6, and mDNS.
+
+It also demonstrated how to examine TCP handshakes, retransmissions, connection resets, encrypted communication, and local network discovery traffic.
+
+The analysis emphasized evidence-based investigation and the importance of distinguishing normal network behavior from genuinely suspicious activity.
+
+Overall, this project strengthened practical knowledge of networking fundamentals, packet analysis, and introductory network security investigation.
+
+## 19. Project Type
+
+Educational cybersecurity and network traffic analysis project.
+
+**Operating System:** Windows 11  
+**Packet Analysis Tool:** Wireshark 4.6.9  
+**Capture Format:** PCAPNG  
+**Analysis Method:** Live packet capture and offline packet inspection
+
+**Project Status:** Practical packet analysis completed; documentation and portfolio preparation in progress.
